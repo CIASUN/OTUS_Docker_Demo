@@ -27,9 +27,6 @@
       <Content Include="..\sample4\Dockerfile">
         <Link>Dockerfile</Link>
       </Content>
-      <Content Include="..\sample5\docker-compose.yml">
-        <Link>docker-compose.yml</Link>
-      </Content>
       <Content Include="..\sample5\Dockerfile">
         <Link>Dockerfile</Link>
       </Content>
