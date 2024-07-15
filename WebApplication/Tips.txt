@@ -1,0 +1,10 @@
+
+docker build -f sample2/Dockerfile -t webapplication2 .
+
+docker inspect 9c703d373f61ca33f879dbc6cb65bb1f2a78c676c75abaa56c7b98795a7b1737 /"Labels": {
+
+docker run -it -p 5002:5002 webapplication2
+docker run -it -p 5002:5002 webapplication2 --urls=http://*:5003
+
+docker exec -it 274a88c9e7bea9ec7633f003f9892bef91b798074d8dcf56850ca75077142c2a bash
+ 
