@@ -1,4 +1,10 @@
+docker run -it -p 5002:5002 webapplication2
+docker exec -it 2d7247b593ad bash
 
+cd /usr/share/dotnet/shared/Microsoft.NETCore.App/8.0.7
+//----------------------------
+
+docker inspect webapplication2
 docker build -f sample2/Dockerfile -t webapplication2 .
 
 docker inspect 9c703d373f61ca33f879dbc6cb65bb1f2a78c676c75abaa56c7b98795a7b1737 /"Labels": {
