@@ -10,7 +10,9 @@ env:
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
   POSTGRES_DB: myapp
-  CONNECTION_STRING: "Host=postgres;Database=myapp;Username=postgres;Password=postgres"
+  PGUSER: postgres
+  PGPASSWORD: postgres
+  CONNECTION_STRING: "Host=localhost;Database=myapp;Username=postgres;Password=postgres"
 
 jobs:
   build-and-test:
@@ -40,32 +42,29 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Debug PostgreSQL logs
+    - name: Debug PostgreSQL container state
       run: |
-        echo "🛠️ Debugging PostgreSQL container state..."
+        echo "🛠️ Docker containers:"
         docker ps -a
+        echo "🧾 PostgreSQL logs:"
         docker logs $(docker ps -q --filter "ancestor=postgres:13-alpine" | head -n 1)
 
     - name: Wait for PostgreSQL to be ready
-      env:
-        PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
       run: |
         for i in {1..10}; do
-          if pg_isready -h postgres -U $POSTGRES_USER -d $POSTGRES_DB; then
+          if pg_isready -h localhost -p 5432; then
             echo "✅ PostgreSQL is ready!"
             exit 0
           fi
-          echo "Waiting for PostgreSQL... Attempt $i"
-          sleep 2
+          echo "⏳ Waiting for PostgreSQL... Attempt $i"
+          sleep 3
         done
         echo "❌ PostgreSQL failed to start"
         exit 1
 
-    - name: Apply migrations manually
-      env:
-        PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+    - name: Apply migrations
       run: |
-        psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -f WebApplication/migrations/001_init.sql
+        psql -h localhost -U postgres -d myapp -f WebApplication/migrations/001_init.sql
 
     - name: Restore dependencies
       working-directory: WebApplication
@@ -75,12 +74,14 @@ jobs:
       working-directory: WebApplication
       run: dotnet build --no-restore
 
-    - name: Verify migration applied (check 'users' table)
-      env:
-        PGPASSWORD: ${{ env.POSTGRES_PASSWORD }}
+    - name: Test
+      working-directory: WebApplication
+      run: dotnet test --no-build --verbosity normal
+
+    - name: Verify migration (check 'users' table)
       run: |
-        echo "Checking if 'users' table exists..."
-        psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -c "
+        echo "🧪 Checking if 'users' table exists..."
+        psql -h localhost -U postgres -d myapp -c "
           SELECT table_name
           FROM information_schema.tables
           WHERE table_schema = 'public' AND table_name = 'users';
