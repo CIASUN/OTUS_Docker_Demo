@@ -30,7 +30,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        
+        volumes: []  # volumes временно отключены
 
     steps:
     - name: Checkout repository
@@ -41,18 +41,28 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
+    - name: Debug PostgreSQL logs
+      run: |
+        echo "🛠️ Debugging PostgreSQL container state..."
+        docker ps -a
+        docker logs $(docker ps -q --filter "ancestor=postgres:13-alpine" | head -n 1)
+
     - name: Wait for PostgreSQL to be ready
       run: |
         for i in {1..10}; do
           if pg_isready -h postgres -U $POSTGRES_USER -d $POSTGRES_DB; then
-            echo "PostgreSQL is ready!"
+            echo "✅ PostgreSQL is ready!"
             exit 0
           fi
           echo "Waiting for PostgreSQL... Attempt $i"
           sleep 2
         done
-        echo "PostgreSQL failed to start"
+        echo "❌ PostgreSQL failed to start"
         exit 1
+
+    - name: Apply migrations manually
+      run: |
+        PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -f WebApplication/migrations/001_init.sql
 
     - name: Restore dependencies
       working-directory: WebApplication
